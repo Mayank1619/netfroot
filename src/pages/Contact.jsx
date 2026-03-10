@@ -193,12 +193,6 @@ const Contact = () => {
                     <button type="submit" disabled={isSubmitting} className="btn-primary w-full disabled:opacity-60 disabled:cursor-not-allowed">
                       {isSubmitting ? 'Sending...' : 'Send Message'}
                     </button>
-
-                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-4">
-                      <span className="inline-block bg-green-100 dark:bg-green-900 dark:text-green-200 text-green-800 px-3 py-1 rounded-full">
-                        Free EmailJS integration enabled
-                      </span>
-                    </p>
                   </form>
               </div>
             </div>

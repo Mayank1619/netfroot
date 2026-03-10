@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Mail, MessageCircle, MapPin, Phone } from 'lucide-react'
+import emailjs from '@emailjs/browser'
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -8,7 +9,8 @@ const Contact = () => {
     company: '',
     message: '',
   })
-  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState(null)
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -21,33 +23,43 @@ const Contact = () => {
     })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    
-    // TODO: Firebase Integration
-    // import { getFirestore, collection, addDoc } from 'firebase/firestore'
-    // const db = getFirestore()
-    // 
-    // try {
-    //   await addDoc(collection(db, 'contacts'), {
-    //     ...formData,
-    //     timestamp: new Date(),
-    //   })
-    //   setIsSubmitted(true)
-    //   setFormData({ name: '', email: '', company: '', message: '' })
-    // } catch (error) {
-    //   console.error('Error submitting form:', error)
-    // }
+    setIsSubmitting(true)
+    setSubmitStatus(null)
 
-    // Temporary: Just show success message
-    console.log('Form submitted:', formData)
-    setIsSubmitted(true)
-    
-    // Reset form after 3 seconds
-    setTimeout(() => {
+    try {
+      const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID
+      const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
+      const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+
+      if (!serviceId || !templateId || !publicKey) {
+        throw new Error('EmailJS environment variables are missing')
+      }
+
+      await emailjs.send(
+        serviceId,
+        templateId,
+        {
+          from_name: formData.name,
+          from_email: formData.email,
+          company: formData.company || 'N/A',
+          subject: 'New Netfroot Contact Form Submission',
+          message: formData.message,
+          to_email: 'netfroot@gmail.com',
+        },
+        { publicKey }
+      )
+
+      setSubmitStatus('success')
       setFormData({ name: '', email: '', company: '', message: '' })
-      setIsSubmitted(false)
-    }, 3000)
+    } catch (error) {
+      console.error('Error submitting form:', error)
+      setSubmitStatus('error')
+    } finally {
+      setIsSubmitting(false)
+      setTimeout(() => setSubmitStatus(null), 5000)
+    }
   }
 
   const contactInfo = [
@@ -102,14 +114,19 @@ const Contact = () => {
                   Send Us a Message
                 </h2>
                 
-                {isSubmitted ? (
-                  <div className="bg-success/10 border-2 border-success text-success px-6 py-8 rounded-xl text-center animate-fade-in">
-                    <div className="text-5xl mb-4">✓</div>
-                    <h3 className="text-2xl font-bold mb-2">Thank You!</h3>
-                    <p>Your message has been sent successfully. We'll get back to you soon!</p>
+                {submitStatus === 'success' && (
+                  <div className="bg-success/10 border-2 border-success text-success px-6 py-4 rounded-xl text-center animate-fade-in mb-6">
+                    <p className="font-semibold">Thank you! Your message has been sent successfully.</p>
                   </div>
-                ) : (
-                  <form onSubmit={handleSubmit} className="space-y-6">
+                )}
+
+                {submitStatus === 'error' && (
+                  <div className="bg-red-100 border-2 border-red-400 text-red-700 px-6 py-4 rounded-xl text-center animate-fade-in mb-6 dark:bg-red-900/30 dark:text-red-300 dark:border-red-700">
+                    <p className="font-semibold">Could not send message. Please try again.</p>
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                       <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Name <span className="text-red-500">*</span>
@@ -173,17 +190,16 @@ const Contact = () => {
                       />
                     </div>
 
-                    <button type="submit" className="btn-primary w-full">
-                      Send Message
+                    <button type="submit" disabled={isSubmitting} className="btn-primary w-full disabled:opacity-60 disabled:cursor-not-allowed">
+                      {isSubmitting ? 'Sending...' : 'Send Message'}
                     </button>
 
                     <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-4">
-                      <span className="inline-block bg-yellow-100 dark:bg-yellow-900 dark:text-yellow-200 text-yellow-800 px-3 py-1 rounded-full">
-                        ⚠️ Note: Form will be connected to Firebase in future
+                      <span className="inline-block bg-green-100 dark:bg-green-900 dark:text-green-200 text-green-800 px-3 py-1 rounded-full">
+                        Free EmailJS integration enabled
                       </span>
                     </p>
                   </form>
-                )}
               </div>
             </div>
 
